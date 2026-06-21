@@ -1,0 +1,7 @@
+*.db
+*.pyc
+__pycache__/
+instance/
+.env
+*.bat
+check_db.py

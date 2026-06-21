@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}ログイン — 業務日誌システム{% endblock %}
+
+{% block content %}
+<div class="card shadow-lg border-0" style="width: 400px;">
+  <div class="card-body p-5">
+    <div class="text-center mb-4">
+      <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+           style="width:60px;height:60px;">
+        <i class="bi bi-journal-richtext fs-3"></i>
+      </div>
+      <h4 class="fw-bold text-dark mb-0">業務日誌システム</h4>
+      <p class="text-muted small mt-1">香川県商工会連合会</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger py-2 small">
+      <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">ユーザー名</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-person"></i></span>
+          <input type="text" name="username" class="form-control" placeholder="ユーザー名を入力" required autofocus>
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label fw-semibold">パスワード</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock"></i></span>
+          <input type="password" name="password" class="form-control" placeholder="パスワードを入力" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+        <i class="bi bi-box-arrow-in-right me-1"></i>ログイン
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

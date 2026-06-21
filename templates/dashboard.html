@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block title %}ダッシュボード — 業務日誌システム{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0"><i class="bi bi-house me-2 text-primary"></i>ダッシュボード</h5>
+  <a href="{{ url_for('diary_new') }}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>新規作成
+  </a>
+</div>
+
+{% if pending %}
+<div class="card border-warning mb-4 shadow-sm">
+  <div class="card-header bg-warning bg-opacity-10 text-warning-emphasis fw-semibold py-2">
+    <i class="bi bi-clock-history me-1"></i>承認待ち（{{ pending|length }}件）
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-3">日付</th>
+          <th>氏名</th>
+          <th>役職</th>
+          <th>業務内容（概要）</th>
+          <th class="text-center">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in pending %}
+        <tr>
+          <td class="ps-3">{{ e.date.strftime('%Y/%m/%d') }}</td>
+          <td>{{ e.user.full_name }}</td>
+          <td><span class="badge bg-secondary">{{ e.user.role_label }}</span></td>
+          <td class="text-truncate" style="max-width:300px;">{{ e.business_content }}</td>
+          <td class="text-center">
+            <a href="{{ url_for('diary_detail', entry_id=e.id) }}" class="btn btn-warning btn-sm">
+              <i class="bi bi-check-circle me-1"></i>承認する
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- 検索・絞り込み -->
+<div class="card shadow-sm mb-4">
+  <div class="card-body py-3">
+    <form class="row g-2 align-items-end" method="get">
+      <div class="col-auto">
+        <label class="form-label small fw-semibold mb-1">期間（開始）</label>
+        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+      </div>
+      <div class="col-auto">
+        <label class="form-label small fw-semibold mb-1">期間（終了）</label>
+        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+      </div>
+      {% if user.role != 'staff' %}
+      <div class="col-auto">
+        <label class="form-label small fw-semibold mb-1">作成者</label>
+        <select name="author_id" class="form-select form-select-sm">
+          <option value="">全員</option>
+          {% for u in all_users %}
+          <option value="{{ u.id }}" {% if author_id == u.id|string %}selected{% endif %}>
+            {{ u.full_name }}（{{ u.role_label }}）
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-search me-1"></i>絞り込み
+        </button>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm ms-1">リセット</a>
+      </div>
+      <div class="col-auto ms-auto">
+        <a href="{{ url_for('export_diary_csv', date_from=date_from, date_to=date_to) }}"
+           class="btn btn-outline-success btn-sm">
+          <i class="bi bi-download me-1"></i>CSV出力
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 日誌一覧 -->
+<div class="card shadow-sm">
+  <div class="card-header bg-white fw-semibold py-2">
+    <i class="bi bi-list-ul me-1 text-primary"></i>業務日誌一覧
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-3" style="width:110px;">日付</th>
+          <th style="width:100px;">氏名</th>
+          <th style="width:80px;">役職</th>
+          <th>業務内容</th>
+          <th style="width:80px;" class="text-center">指導記録</th>
+          <th style="width:90px;" class="text-center">承認状況</th>
+          <th style="width:120px;" class="text-center">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td class="ps-3 fw-semibold">{{ e.date.strftime('%Y/%m/%d') }}</td>
+          <td>{{ e.user.full_name }}</td>
+          <td><span class="badge bg-secondary">{{ e.user.role_label }}</span></td>
+          <td class="text-truncate" style="max-width:250px;">{{ e.business_content }}</td>
+          <td class="text-center">
+            {% if e.guidance_records %}
+            <span class="badge bg-info">{{ e.guidance_records|length }}件</span>
+            {% else %}
+            <span class="text-muted small">—</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if e.is_fully_approved() %}
+              <span class="badge bg-success">承認済</span>
+            {% elif e.approvals %}
+              <span class="badge bg-warning text-dark">承認中</span>
+            {% else %}
+              <span class="badge bg-light text-dark border">未承認</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <a href="{{ url_for('diary_detail', entry_id=e.id) }}" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-eye"></i>
+            </a>
+            <a href="{{ url_for('diary_print', entry_id=e.id) }}" class="btn btn-outline-secondary btn-sm" target="_blank">
+              <i class="bi bi-printer"></i>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-5">
+            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+            データがありません
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="card-footer bg-white">
+    <nav>
+      <ul class="pagination pagination-sm mb-0 justify-content-center">
+        {% if pagination.has_prev %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ pagination.prev_num }}&date_from={{ date_from }}&date_to={{ date_to }}&author_id={{ author_id }}">前へ</a>
+        </li>
+        {% endif %}
+        {% for p in pagination.iter_pages() %}
+          {% if p %}
+          <li class="page-item {% if p == pagination.page %}active{% endif %}">
+            <a class="page-link" href="?page={{ p }}&date_from={{ date_from }}&date_to={{ date_to }}&author_id={{ author_id }}">{{ p }}</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+        {% if pagination.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ pagination.next_num }}&date_from={{ date_from }}&date_to={{ date_to }}&author_id={{ author_id }}">次へ</a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

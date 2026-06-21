@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}業務日誌システム{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+{% if current_user %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm no-print">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand fw-bold fs-5" href="{{ url_for('dashboard') }}">
+      <i class="bi bi-journal-richtext me-1"></i>業務日誌システム
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav me-auto gap-1">
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+            <i class="bi bi-house"></i> ダッシュボード
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'diary_new' %}active{% endif %}" href="{{ url_for('diary_new') }}">
+            <i class="bi bi-plus-square"></i> 新規作成
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'guidance_record' %}active{% endif %}" href="{{ url_for('guidance_record') }}">
+            <i class="bi bi-clipboard2-check"></i> 指導記録簿
+          </a>
+        </li>
+        {% if current_user.role == 'admin' %}
+        <li class="nav-item">
+          <a class="nav-link {% if 'admin' in request.endpoint %}active{% endif %}" href="{{ url_for('admin_users') }}">
+            <i class="bi bi-people"></i> ユーザー管理
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+      <div class="d-flex align-items-center gap-3">
+        <span class="text-white-50 small">
+          <i class="bi bi-person-circle text-white"></i>
+          <span class="text-white fw-semibold">{{ current_user.full_name }}</span>
+          <span class="badge bg-light text-primary ms-1">{{ current_user.role_label }}</span>
+        </span>
+        <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">
+          <i class="bi bi-box-arrow-right"></i> ログアウト
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+<main class="{% if current_user %}container-fluid px-4 py-4{% else %}d-flex align-items-center justify-content-center min-vh-100 bg-light{% endif %}">
+  {% block content %}{% endblock %}
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

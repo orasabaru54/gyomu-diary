@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}指導記録簿 — 業務日誌システム{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h5 class="fw-bold mb-0">
+    <i class="bi bi-clipboard2-check me-2 text-success"></i>指導記録簿
+  </h5>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('export_guidance_csv', date_from=date_from, date_to=date_to, chamber=chamber, author_id=author_id) }}"
+       class="btn btn-outline-success btn-sm">
+      <i class="bi bi-download me-1"></i>CSV出力
+    </a>
+    <button onclick="window.print()" class="btn btn-outline-secondary btn-sm no-print">
+      <i class="bi bi-printer me-1"></i>印刷
+    </button>
+  </div>
+</div>
+
+<!-- 絞り込み -->
+<div class="card shadow-sm mb-4 no-print">
+  <div class="card-body py-3">
+    <form class="row g-2 align-items-end" method="get">
+      <div class="col-auto">
+        <label class="form-label small fw-semibold mb-1">期間（開始）</label>
+        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+      </div>
+      <div class="col-auto">
+        <label class="form-label small fw-semibold mb-1">期間（終了）</label>
+        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+      </div>
+      <div class="col-auto">
+        <label class="form-label small fw-semibold mb-1">商工会名</label>
+        <select name="chamber" class="form-select form-select-sm">
+          <option value="">すべて</option>
+          {% for name in CHAMBER_NAMES %}
+          <option value="{{ name }}" {% if chamber == name %}selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if current_user.role != 'staff' %}
+      <div class="col-auto">
+        <label class="form-label small fw-semibold mb-1">担当者</label>
+        <select name="author_id" class="form-select form-select-sm">
+          <option value="">全員</option>
+          {% for u in all_users %}
+          <option value="{{ u.id }}" {% if author_id == u.id|string %}selected{% endif %}>
+            {{ u.full_name }}（{{ u.role_label }}）
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-search me-1"></i>絞り込み
+        </button>
+        <a href="{{ url_for('guidance_record') }}" class="btn btn-outline-secondary btn-sm ms-1">リセット</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 指導記録表 -->
+<div class="card shadow-sm">
+  <div class="card-header bg-white fw-semibold py-2">
+    <i class="bi bi-table me-1 text-success"></i>指導記録一覧（{{ records|length }}件）
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle mb-0 small">
+      <thead class="table-success">
+        <tr>
+          <th class="ps-3" style="width:100px;">日付</th>
+          <th style="width:80px;">担当者</th>
+          <th style="width:110px;">商工会名</th>
+          <th style="width:90px;">在籍職員名</th>
+          <th style="width:100px;">指導区分</th>
+          <th style="min-width:200px;">指導項目</th>
+          <th>指導内容</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td class="ps-3 fw-semibold text-nowrap">{{ r.diary_entry.date.strftime('%Y/%m/%d') }}</td>
+          <td>{{ r.diary_entry.user.full_name }}</td>
+          <td><span class="badge bg-success bg-opacity-75 text-wrap">{{ r.chamber_name }}</span></td>
+          <td>{{ r.staff_name or '—' }}</td>
+          <td>
+            {% if r.guidance_category %}
+            <span class="badge bg-primary bg-opacity-75">{{ r.guidance_category }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ r.guidance_item or '—' }}</td>
+          <td style="white-space:pre-wrap;">{{ r.guidance_content or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-5">
+            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+            指導記録がありません
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

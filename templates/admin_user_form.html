@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}{% if edit_user %}ユーザー編集{% else %}ユーザー追加{% endif %} — 業務日誌システム{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary btn-sm me-3">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h5 class="fw-bold mb-0">
+    <i class="bi bi-person-{% if edit_user %}gear{% else %}plus{% endif %} me-2 text-primary"></i>
+    {% if edit_user %}ユーザー編集：{{ edit_user.full_name }}{% else %}新規ユーザー追加{% endif %}
+  </h5>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        {% if error %}
+        <div class="alert alert-danger py-2 small">
+          <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">氏名 <span class="text-danger">*</span></label>
+            <input type="text" name="full_name" class="form-control"
+                   value="{{ edit_user.full_name if edit_user else '' }}"
+                   placeholder="例：山田 太郎" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">ユーザー名 <span class="text-danger">*</span></label>
+            {% if edit_user %}
+            <input type="text" class="form-control" value="{{ edit_user.username }}" disabled>
+            <div class="form-text">ユーザー名は変更できません</div>
+            {% else %}
+            <input type="text" name="username" class="form-control"
+                   placeholder="半角英数字（ログインID）" required>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              パスワード {% if not edit_user %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            <input type="password" name="password" class="form-control"
+                   placeholder="{% if edit_user %}変更する場合のみ入力{% else %}パスワードを設定{% endif %}"
+                   {% if not edit_user %}required{% endif %}>
+            {% if edit_user %}
+            <div class="form-text">空白のままにすると変更されません</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">役職 <span class="text-danger">*</span></label>
+            <select name="role" class="form-select" required>
+              {% for role_key, role_name in ROLE_LABELS.items() %}
+              <option value="{{ role_key }}"
+                {% if edit_user and edit_user.role == role_key %}selected
+                {% elif not edit_user and role_key == 'shuji' %}selected
+                {% endif %}>
+                {{ role_name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">所属</label>
+            <select name="department" class="form-select">
+              <option value="">選択してください</option>
+              {% for dept in DEPARTMENTS %}
+              <option value="{{ dept }}"
+                {% if edit_user and edit_user.department == dept %}selected{% endif %}>
+                {{ dept }}
+              </option>
+              {% endfor %}
+            </select>
+            <div class="form-text mt-1">
+              <i class="bi bi-info-circle me-1"></i>
+              課長は同じ所属の職員の業務日誌のみ承認できます。
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 justify-content-end">
+            <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary px-4">キャンセル</a>
+            <button type="submit" class="btn btn-primary px-5 fw-semibold">
+              <i class="bi bi-floppy me-1"></i>保存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

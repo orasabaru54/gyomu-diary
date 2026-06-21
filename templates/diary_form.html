@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% block title %}{% if entry %}日誌編集{% else %}新規作成{% endif %} — 業務日誌システム{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+  <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm me-3">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h5 class="fw-bold mb-0">
+    <i class="bi bi-{% if entry %}pencil{% else %}plus-square{% endif %} me-2 text-primary"></i>
+    {% if entry %}業務日誌を編集{% else %}業務日誌を新規作成{% endif %}
+  </h5>
+</div>
+
+<form method="post" id="diaryForm">
+<div class="row g-4">
+
+  <!-- 左カラム：基本情報 -->
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-primary text-white fw-semibold py-2">
+        <i class="bi bi-info-circle me-1"></i>基本情報
+      </div>
+      <div class="card-body">
+
+        <!-- (1) 年月日 -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold required-label">① 年月日</label>
+          <input type="date" name="date" class="form-control"
+                 value="{{ today }}" required>
+        </div>
+
+        <!-- (2) 来訪者 -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">② 来訪者</label>
+          <textarea name="visitors" class="form-control" rows="3"
+                    placeholder="来訪者名・所属などを記入">{{ entry.visitors if entry else '' }}</textarea>
+        </div>
+
+        <!-- (3) 会議 -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">③ 会議</label>
+          <textarea name="meetings" class="form-control" rows="3"
+                    placeholder="参加した会議・打合せなどを記入">{{ entry.meetings if entry else '' }}</textarea>
+        </div>
+
+        <!-- (4) 業務内容 -->
+        <div class="mb-0">
+          <label class="form-label fw-semibold">④ 業務内容</label>
+          <textarea name="business_content" class="form-control" rows="5"
+                    placeholder="本日の業務内容を記入">{{ entry.business_content if entry else '' }}</textarea>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 右カラム：指導記録 -->
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header bg-success text-white fw-semibold py-2 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clipboard2-check me-1"></i>⑤ 指導記録</span>
+        <button type="button" class="btn btn-light btn-sm" onclick="addGuidanceRow()">
+          <i class="bi bi-plus-lg me-1"></i>行を追加
+        </button>
+      </div>
+      <div class="card-body p-2" id="guidanceContainer">
+
+        {% if entry and entry.guidance_records %}
+          {% for gr in entry.guidance_records %}
+          <div class="guidance-row card mb-2 border-0 bg-light">
+            <div class="card-body p-3">
+              <div class="row g-2">
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold mb-1">①誰に（商工会名）</label>
+                  <select name="chamber_name[]" class="form-select form-select-sm">
+                    <option value="">選択してください</option>
+                    {% for name in CHAMBER_NAMES %}
+                    <option value="{{ name }}" {% if gr.chamber_name == name %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold mb-1">②在籍職員名</label>
+                  <input type="text" name="staff_name[]" class="form-control form-control-sm"
+                         value="{{ gr.staff_name }}" placeholder="職員名（任意）">
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold mb-1">③指導区分</label>
+                  <select name="guidance_category[]" class="form-select form-select-sm category-select"
+                          onchange="updateItems(this)">
+                    <option value="">選択してください</option>
+                    {% for cat in GUIDANCE_CATEGORIES.keys() %}
+                    <option value="{{ cat }}" {% if gr.guidance_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold mb-1">③指導項目</label>
+                  <select name="guidance_item[]" class="form-select form-select-sm item-select">
+                    <option value="">← 指導区分を先に選択</option>
+                    {% if gr.guidance_category and gr.guidance_category in GUIDANCE_CATEGORIES %}
+                      {% for item in GUIDANCE_CATEGORIES[gr.guidance_category] %}
+                      <option value="{{ item }}" {% if gr.guidance_item == item %}selected{% endif %}>{{ item }}</option>
+                      {% endfor %}
+                    {% endif %}
+                  </select>
+                </div>
+                <div class="col-12">
+                  <label class="form-label small fw-semibold mb-1">指導内容（詳細）</label>
+                  <textarea name="guidance_content[]" class="form-control form-control-sm" rows="2"
+                            placeholder="指導した具体的な内容を記入">{{ gr.guidance_content }}</textarea>
+                </div>
+              </div>
+              <div class="text-end mt-2">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeGuidanceRow(this)">
+                  <i class="bi bi-trash me-1"></i>削除
+                </button>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <!-- 初期行（新規時） -->
+          <div class="guidance-row card mb-2 border-0 bg-light">
+            <div class="card-body p-3">
+              <div class="row g-2">
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold mb-1">①誰に（商工会名）</label>
+                  <select name="chamber_name[]" class="form-select form-select-sm">
+                    <option value="">選択してください</option>
+                    {% for name in CHAMBER_NAMES %}
+                    <option value="{{ name }}">{{ name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold mb-1">②在籍職員名</label>
+                  <input type="text" name="staff_name[]" class="form-control form-control-sm" placeholder="職員名（任意）">
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold mb-1">③指導区分</label>
+                  <select name="guidance_category[]" class="form-select form-select-sm category-select"
+                          onchange="updateItems(this)">
+                    <option value="">選択してください</option>
+                    {% for cat in GUIDANCE_CATEGORIES.keys() %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold mb-1">③指導項目</label>
+                  <select name="guidance_item[]" class="form-select form-select-sm item-select">
+                    <option value="">← 指導区分を先に選択</option>
+                  </select>
+                </div>
+                <div class="col-12">
+                  <label class="form-label small fw-semibold mb-1">指導内容（詳細）</label>
+                  <textarea name="guidance_content[]" class="form-control form-control-sm" rows="2"
+                            placeholder="指導した具体的な内容を記入"></textarea>
+                </div>
+              </div>
+              <div class="text-end mt-2">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeGuidanceRow(this)">
+                  <i class="bi bi-trash me-1"></i>削除
+                </button>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 保存ボタン -->
+<div class="d-flex justify-content-end gap-2 mt-4">
+  <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary px-4">キャンセル</a>
+  <button type="submit" class="btn btn-primary px-5 fw-semibold">
+    <i class="bi bi-floppy me-1"></i>保存する
+  </button>
+</div>
+</form>
+
+<!-- 行テンプレート（hidden） -->
+<template id="guidanceRowTemplate">
+  <div class="guidance-row card mb-2 border-0 bg-light">
+    <div class="card-body p-3">
+      <div class="row g-2">
+        <div class="col-sm-6">
+          <label class="form-label small fw-semibold mb-1">①誰に（商工会名）</label>
+          <select name="chamber_name[]" class="form-select form-select-sm">
+            <option value="">選択してください</option>
+            {% for name in CHAMBER_NAMES %}
+            <option value="{{ name }}">{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label small fw-semibold mb-1">②在籍職員名</label>
+          <input type="text" name="staff_name[]" class="form-control form-control-sm" placeholder="職員名（任意）">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label small fw-semibold mb-1">③指導区分</label>
+          <select name="guidance_category[]" class="form-select form-select-sm category-select"
+                  onchange="updateItems(this)">
+            <option value="">選択してください</option>
+            {% for cat in GUIDANCE_CATEGORIES.keys() %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label small fw-semibold mb-1">③指導項目</label>
+          <select name="guidance_item[]" class="form-select form-select-sm item-select">
+            <option value="">← 指導区分を先に選択</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-semibold mb-1">指導内容（詳細）</label>
+          <textarea name="guidance_content[]" class="form-control form-control-sm" rows="2"
+                    placeholder="指導した具体的な内容を記入"></textarea>
+        </div>
+      </div>
+      <div class="text-end mt-2">
+        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeGuidanceRow(this)">
+          <i class="bi bi-trash me-1"></i>削除
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const GUIDANCE_CATEGORIES = {{ GUIDANCE_CATEGORIES | tojson }};
+</script>
+{% endblock %}

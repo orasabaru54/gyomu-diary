@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}業務日誌詳細 — {{ entry.date.strftime('%Y/%m/%d') }}{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex align-items-center">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm me-3">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h5 class="fw-bold mb-0">
+      <i class="bi bi-journal-text me-2 text-primary"></i>業務日誌詳細
+    </h5>
+  </div>
+  <div class="d-flex gap-2">
+    {% if entry.user_id == current_user.id and not entry.is_fully_approved() %}
+    <a href="{{ url_for('diary_edit', entry_id=entry.id) }}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-pencil me-1"></i>編集
+    </a>
+    {% endif %}
+    <a href="{{ url_for('diary_print', entry_id=entry.id) }}" class="btn btn-outline-secondary btn-sm" target="_blank">
+      <i class="bi bi-printer me-1"></i>印刷
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- 左：基本情報 -->
+  <div class="col-lg-5">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-primary text-white fw-semibold py-2">
+        <i class="bi bi-info-circle me-1"></i>基本情報
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4 text-muted small">① 年月日</dt>
+          <dd class="col-sm-8 fw-semibold fs-5">{{ entry.date.strftime('%Y年%m月%d日') }}</dd>
+
+          <dt class="col-sm-4 text-muted small">作成者</dt>
+          <dd class="col-sm-8">
+            {{ entry.user.full_name }}
+            <span class="badge bg-secondary ms-1">{{ entry.user.role_label }}</span>
+          </dd>
+
+          <dt class="col-sm-4 text-muted small">② 来訪者</dt>
+          <dd class="col-sm-8">{{ entry.visitors or '（なし）' }}</dd>
+
+          <dt class="col-sm-4 text-muted small">③ 会議</dt>
+          <dd class="col-sm-8">{{ entry.meetings or '（なし）' }}</dd>
+
+          <dt class="col-sm-4 text-muted small">④ 業務内容</dt>
+          <dd class="col-sm-8" style="white-space:pre-wrap;">{{ entry.business_content or '（なし）' }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- 承認状況 -->
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold py-2
+        {% if entry.is_fully_approved() %}bg-success text-white
+        {% elif entry.approvals %}bg-warning text-dark
+        {% else %}bg-light{% endif %}">
+        <i class="bi bi-check2-circle me-1"></i>承認状況
+        {% if entry.is_fully_approved() %}
+          <span class="badge bg-white text-success ms-2">承認済</span>
+        {% elif entry.approvals %}
+          <span class="badge bg-white text-warning ms-2">承認中</span>
+        {% else %}
+          <span class="badge bg-secondary ms-2">未承認</span>
+        {% endif %}
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">役職</th>
+              <th>状況</th>
+              <th>承認日時</th>
+              <th>コメント</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for role in required_approvers %}
+            <tr>
+              <td class="ps-3 fw-semibold">{{ ROLE_LABELS[role] }}</td>
+              {% if role in approval_status %}
+              <td><span class="badge bg-success"><i class="bi bi-check-lg me-1"></i>承認済</span></td>
+              <td class="small text-muted">{{ approval_status[role].approved_at.strftime('%m/%d %H:%M') }}</td>
+              <td class="small">{{ approval_status[role].comment or '—' }}</td>
+              {% else %}
+              <td><span class="badge bg-light text-dark border">未承認</span></td>
+              <td>—</td>
+              <td>—</td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="text-center text-muted small py-2">承認不要</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if can_approve %}
+      <div class="card-footer bg-light">
+        <form method="post" action="{{ url_for('diary_approve', entry_id=entry.id) }}">
+          <div class="mb-2">
+            <label class="form-label small fw-semibold mb-1">
+              コメント（任意）
+            </label>
+            <textarea name="comment" class="form-control form-control-sm" rows="2"
+                      placeholder="承認コメントを入力（任意）"></textarea>
+          </div>
+          <button type="submit" class="btn btn-success w-100 fw-semibold">
+            <i class="bi bi-check-circle me-1"></i>承認する
+          </button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 右：指導記録 -->
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header bg-success text-white fw-semibold py-2 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clipboard2-check me-1"></i>⑤ 指導記録（{{ entry.guidance_records|length }}件）</span>
+        {% if entry.guidance_records %}
+        <a href="{{ url_for('guidance_record') }}" class="btn btn-light btn-sm">
+          <i class="bi bi-list-ul me-1"></i>指導記録簿へ
+        </a>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% if entry.guidance_records %}
+          {% for gr in entry.guidance_records %}
+          <div class="card mb-3 border-0 bg-light">
+            <div class="card-body py-2 px-3">
+              <div class="row g-1 small">
+                <div class="col-6">
+                  <span class="text-muted">商工会名：</span>
+                  <strong>{{ gr.chamber_name }}</strong>
+                </div>
+                <div class="col-6">
+                  <span class="text-muted">在籍職員：</span>
+                  {{ gr.staff_name or '—' }}
+                </div>
+                <div class="col-6">
+                  <span class="text-muted">指導区分：</span>
+                  <span class="badge bg-primary bg-opacity-75">{{ gr.guidance_category or '—' }}</span>
+                </div>
+                <div class="col-6">
+                  <span class="text-muted">指導項目：</span>
+                  {{ gr.guidance_item or '—' }}
+                </div>
+                {% if gr.guidance_content %}
+                <div class="col-12 mt-1">
+                  <span class="text-muted">指導内容：</span><br>
+                  <div style="white-space:pre-wrap;">{{ gr.guidance_content }}</div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted text-center py-4 mb-0">
+            <i class="bi bi-clipboard2 d-block fs-2 mb-2"></i>
+            指導記録はありません
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

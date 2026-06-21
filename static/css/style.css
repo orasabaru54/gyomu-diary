@@ -1,0 +1,107 @@
+/* 全体 */
+body {
+  background-color: #f5f7fa;
+  font-family: "Meiryo", "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif;
+}
+
+/* ナビゲーション */
+.navbar {
+  min-height: 54px;
+}
+
+/* カード */
+.card {
+  border-radius: 8px;
+}
+.card-header {
+  border-radius: 8px 8px 0 0 !important;
+}
+
+/* 必須ラベル */
+.required-label::after {
+  content: " *";
+  color: #dc3545;
+}
+
+/* テーブル */
+.table th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* 指導記録行 */
+.guidance-row {
+  transition: box-shadow 0.15s;
+}
+.guidance-row:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* バッジ */
+.badge {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* 承認待ちハイライト */
+tr.pending-row {
+  background-color: #fff8e1;
+}
+
+/* フォーム */
+.form-control:focus,
+.form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15);
+}
+
+/* 印刷時 */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .navbar {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .card-header {
+    background-color: #e0e0e0 !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .table {
+    font-size: 9pt;
+  }
+  .badge {
+    border: 1px solid #999;
+    color: #000 !important;
+    background-color: #eee !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .btn { display: none !important; }
+  .pagination { display: none !important; }
+}
+
+/* ページネーション */
+.page-link {
+  font-size: 0.85rem;
+}
+
+/* スクロールバー（テーブル） */
+.table-responsive {
+  scrollbar-width: thin;
+}
+
+/* ログイン画面 */
+.min-vh-100 {
+  background: linear-gradient(135deg, #1a6fc4 0%, #0d47a1 100%);
+}
