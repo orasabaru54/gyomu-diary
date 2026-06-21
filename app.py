@@ -11,10 +11,13 @@ import os
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'gyomu-diary-secret-key-setouchi-2024')
 
-# Railway は DATABASE_URL を postgres:// で渡すので postgresql:// に変換
+# postgres:// → postgresql:// に変換（Railway/Render対応）
 _db_url = os.environ.get('DATABASE_URL', 'sqlite:///gyomu_diary.db')
 if _db_url.startswith('postgres://'):
     _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+# Supabase は SSL 必須
+if 'supabase' in _db_url and 'sslmode' not in _db_url:
+    _db_url += '?sslmode=require'
 app.config['SQLALCHEMY_DATABASE_URI'] = _db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -95,6 +98,7 @@ GUIDANCE_CATEGORIES = {
 # ===== モデル =====
 
 class User(db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
@@ -132,7 +136,7 @@ class User(db.Model):
 
 class DiaryEntry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     visitors = db.Column(db.Text, default='')
     meetings = db.Column(db.Text, default='')
@@ -202,7 +206,7 @@ class GuidanceRecord(db.Model):
 class Approval(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     diary_entry_id = db.Column(db.Integer, db.ForeignKey('diary_entry.id'), nullable=False)
-    approver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    approver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     approver_role = db.Column(db.String(20), nullable=False)
     comment = db.Column(db.Text, default='')
     approved_at = db.Column(db.DateTime, default=datetime.now)
